@@ -217,7 +217,9 @@ module ActiveModel
       association_object = association_serializer && association_serializer.object
       return unless association_object
 
-      relationship_value = association_serializer.serializable_hash(adapter_options, {}, adapter_instance)
+      as_fields = fields_for_associations(association_object, adapter_options[:fields])
+      as_options = as_fields.any? ? { fields: as_fields } : {}
+      relationship_value = association_serializer.serializable_hash(adapter_options, as_options, adapter_instance)
 
       if association.options[:polymorphic] && relationship_value
         polymorphic_type = association_object.class.name.underscore
@@ -228,6 +230,16 @@ module ActiveModel
     end
 
     protected
+
+    def fields_for_associations(association_object, fields = [])
+      as_fields = []
+
+      key = association_object.model_name.singular.to_sym
+      fields.each do |field|
+        as_fields = field[key] if field.is_a?(Hash) && !field[key].blank?
+      end
+      as_fields
+    end
 
     attr_accessor :instance_options
   end
